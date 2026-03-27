@@ -40,39 +40,44 @@ fit_engression_cs <- function(Y, D, controls = NULL,
     lr = lr, silent = silent
   )
 
-  # Construct prediction inputs for D=1 and D=0
-  # Use mean of controls for prediction (marginal effect)
+  # Predict for each treated unit individually (not at mean controls)
+  # In nonlinear models, E[f(X)] != f(E[X]), so we must average individual effects
+  idx_treated <- which(D == 1)
+  if (length(idx_treated) == 0) stop("No treated units found in D.")
+
   if (!is.null(controls)) {
-    ctrl_means <- colMeans(controls)
-    X1 <- matrix(c(1, ctrl_means), nrow = 1)
-    X0 <- matrix(c(0, ctrl_means), nrow = 1)
+    ctrl_treated <- controls[idx_treated, , drop = FALSE]
+    X1_treated <- cbind(D = 1, ctrl_treated)
+    X0_treated <- cbind(D = 0, ctrl_treated)
   } else {
-    X1 <- matrix(1, nrow = 1, ncol = 1)
-    X0 <- matrix(0, nrow = 1, ncol = 1)
+    X1_treated <- matrix(1, nrow = length(idx_treated), ncol = 1)
+    X0_treated <- matrix(0, nrow = length(idx_treated), ncol = 1)
+    colnames(X1_treated) <- colnames(X0_treated) <- "D"
   }
 
-  # ATT: difference in conditional means
-  yhat1 <- predict(model, X1, type = "mean", nsample = nsample)
-  yhat0 <- predict(model, X0, type = "mean", nsample = nsample)
-  att <- as.numeric(yhat1 - yhat0)
+  # ATT: average difference in conditional means for treated units
+  yhat1 <- predict(model, X1_treated, type = "mean", nsample = nsample)
+  yhat0 <- predict(model, X0_treated, type = "mean", nsample = nsample)
+  att <- mean(as.numeric(yhat1) - as.numeric(yhat0))
 
-  # QTE: difference in conditional quantiles
-  q1 <- predict(model, X1, type = "quantile", quantiles = quantiles, nsample = nsample)
-  q0 <- predict(model, X0, type = "quantile", quantiles = quantiles, nsample = nsample)
+  # QTE: quantiles of pooled counterfactual distributions for treated units
+  s1_raw <- predict(model, X1_treated, type = "sample", nsample = nsample)
+  s0_raw <- predict(model, X0_treated, type = "sample", nsample = nsample)
+  s1_pool <- as.numeric(s1_raw)
+  s0_pool <- as.numeric(s0_raw)
+
+  q1 <- stats::quantile(s1_pool, probs = quantiles, na.rm = TRUE)
+  q0 <- stats::quantile(s0_pool, probs = quantiles, na.rm = TRUE)
   qte <- data.frame(
     quantile = quantiles,
     effect = as.numeric(q1) - as.numeric(q0)
   )
 
-  # Counterfactual samples
-  samples_treated <- as.numeric(predict(model, X1, type = "sample", nsample = nsample))
-  samples_control <- as.numeric(predict(model, X0, type = "sample", nsample = nsample))
-
   list(
     model = model,
     att = att,
     qte = qte,
-    samples_treated = samples_treated,
-    samples_control = samples_control
+    samples_treated = s1_pool,
+    samples_control = s0_pool
   )
 }

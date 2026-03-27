@@ -88,6 +88,7 @@ bootstrap_endid <- function(Y, D, controls = NULL,
     ci_lower = unname(ci_att[1]),
     ci_upper = unname(ci_att[2]),
     att_boot = att_valid,
-    qte_boot = qte_boot
+    qte_boot = qte_boot,
+    qte_boot_mat = qte_valid
   )
 }
