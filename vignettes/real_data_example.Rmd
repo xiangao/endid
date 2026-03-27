@@ -1,0 +1,97 @@
+---
+title: "Real Data Example: Castle Doctrine"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Real Data Example: Castle Doctrine}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+In this vignette, we compare `lwdidR` and `endid` using the "Castle Doctrine" dataset from Cheng and Hoekstra (2013). We focus on the cohort of states that implemented the law in 2005.
+
+## Data Preparation
+
+We load the data from `lwdidR` and subset it to compare the 2005 treated cohort against states that were never treated during the sample period.
+
+```{r setup}
+library(lwdidR)
+library(endid)
+library(ggplot2)
+
+# Load the Castle Doctrine dataset
+castle <- read.csv(system.file("extdata", "castle.csv", package = "lwdidR"))
+
+# Define treated (2005 cohort) and never-treated units
+treated_2005 <- castle$effyear == 2005 & !is.na(castle$effyear)
+never_treated <- is.na(castle$effyear) | castle$effyear == 0
+
+df_sub <- castle[treated_2005 | never_treated, ]
+df_sub$group <- as.integer(df_sub$effyear == 2005 & !is.na(df_sub$effyear))
+df_sub$post_2005 <- as.integer(df_sub$year >= 2005)
+
+# Use a specific indicator for lwdidR to identify treatment receipt
+df_sub$treat_receipt <- df_sub$post_2005 * df_sub$group
+
+# Time-invariant controls
+controls <- c("poverty", "unemployrt", "blackm_15_24", "whitem_15_24")
+```
+
+## Linear Estimation with lwdidR
+
+`lwdidR` provides a robust, linear estimate of the Average Treatment Effect on the Treated (ATT).
+
+```{r lwdid}
+fit_lwdid <- lwdid(
+  data = df_sub, 
+  y = "lhomicide", 
+  ivar = "sid", 
+  tvar = "year", 
+  post = "treat_receipt", 
+  controls = controls, 
+  vce = "hc3"
+)
+summary(fit_lwdid)
+```
+
+## Distributional Estimation with endid
+
+`endid` uses engression to estimate how the law affects different parts of the homicide rate distribution.
+
+```{r endid, results='hide'}
+# Reduced epochs and bootstrap for faster rendering
+fit_endid <- endid(
+  data = df_sub, 
+  y = "lhomicide", 
+  ivar = "sid", 
+  tvar = "year", 
+  post = "post_2005", 
+  dvar = "group",
+  controls = controls, 
+  num_epochs = 500, 
+  nboot = 10, 
+  silent = TRUE
+)
+```
+
+```{r endid_summary}
+summary(fit_endid)
+```
+
+## Comparing the Results
+
+While `lwdidR` provides a single point estimate (the average effect), `endid` allows us to visualize the **Quantile Treatment Effects (QTE)**.
+
+```{r plot_qte, fig.width=7, fig.height=4}
+plot(fit_endid)
+```
+
+### Interpretation
+
+In this example, `lwdidR` shows a positive average effect on homicide rates. The `endid` results complement this by showing that the effect is often more pronounced in certain quantiles of the distribution. This distributional perspective can be crucial for policy analysis where the impact on the "tails" of the distribution is as important as the average impact.

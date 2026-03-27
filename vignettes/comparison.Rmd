@@ -1,0 +1,100 @@
+---
+title: "Comparing endid and lwdidR"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Comparing endid and lwdidR}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+Both `endid` and `lwdidR` implement the panel Difference-in-Differences (DiD) approach proposed by Lee & Wooldridge (2025). The core idea is to perform unit-specific pre-treatment transformations (like demeaning or detrending) and then collapse the panel into a cross-section for estimation.
+
+## Key Differences
+
+| Feature | `lwdidR` | `endid` |
+|:---|:---|:---|
+| **Estimation** | Ordinary Least Squares (OLS) | Engression (Neural Network) |
+| **Main Target** | Average Treatment Effect (ATT) | ATT and Distributional Effects (QTE) |
+| **Inference** | Analytical SEs, Wild Bootstrap, Permutation | Non-parametric Unit Bootstrap |
+| **Non-linearity** | Linear only | Handles complex non-linearities |
+
+## A Simulation Comparison
+
+We'll simulate a simple panel where the treatment effect is non-linear—specifically, it varies by a covariate.
+
+```{r setup}
+library(lwdidR)
+library(endid)
+set.seed(42)
+
+# Generate synthetic panel data
+N <- 100
+T_total <- 6
+tpost1 <- 4
+
+unit <- rep(1:N, each = T_total)
+time <- rep(1:T_total, times = N)
+X <- rep(runif(N, -1, 1), each = T_total) # Time-invariant control
+# Group 1: treated, Group 0: control
+group <- rep(c(1, 0), each = N/2 * T_total)
+post <- as.integer(time >= tpost1)
+# Treat units in group 1 after time tpost1
+y <- X + (0.5 + 0.5 * X) * (post * (group == 1)) + rnorm(N * T_total, sd = 0.2)
+
+# Create the data frame
+# In lwdidR, for common-timing, 'post' should typically be the treatment-receipt indicator 
+# (1 if unit i is treated at time t)
+df <- data.frame(unit = unit, time = time, y = y, X = X, 
+                 post_treat = post * group, group = group)
+```
+
+### 1. Estimating with lwdidR (OLS)
+
+`lwdidR` estimates the Average Treatment Effect using OLS.
+
+```{r lwdid}
+# Using 'post_treat' as the treatment receipt indicator
+fit_lwdid <- lwdid(df, y = "y", ivar = "unit", tvar = "time", post = "post_treat", 
+                   controls = "X", vce = "hc3")
+summary(fit_lwdid)
+```
+
+### 2. Estimating with endid (Engression)
+
+`endid` uses `engression` to capture the distributional nature of the effect.
+
+```{r endid, results='hide'}
+# We use fewer epochs and bootstrap draws for speed in this vignette
+# For endid, 'post' is a calendar indicator, 'dvar' is the group indicator
+fit_endid <- endid(df, y = "y", ivar = "unit", tvar = "time", 
+                   post = "post_treat", dvar = "group",
+                   controls = "X",
+                   num_epochs = 200, nboot = 5, silent = TRUE)
+```
+
+```{r endid_summary}
+summary(fit_endid)
+```
+
+### Visualizing Quantile Treatment Effects
+
+While `lwdidR` provides a single ATT, `endid` allows us to see how the treatment affects different parts of the distribution.
+
+```{r plot_qte, fig.width=7, fig.height=4}
+# plot(fit_endid) 
+# Note: In a vignette we'd usually use ggplot2 directly or ensure it's available
+library(ggplot2)
+plot(fit_endid)
+```
+
+## When to use which?
+
+1.  **Use `lwdidR`** when you want a fast, industry-standard linear DiD estimate with well-understood frequentist properties and high-performance standard errors (like Wild Cluster Bootstrap).
+2.  **Use `endid`** when you suspect the treatment effect might be non-linear, vary significantly across the distribution, or if you want to estimate Quantile Treatment Effects (QTE) while still benefiting from the Lee-Wooldridge panel-to-cross-section transformation.

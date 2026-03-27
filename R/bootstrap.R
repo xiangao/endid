@@ -58,12 +58,12 @@ bootstrap_endid <- function(Y, D, controls = NULL,
   att_valid <- att_boot[valid]
   qte_valid <- qte_boot_mat[valid, , drop = FALSE]
 
-  se_att <- stats::sd(att_valid)
-  ci_att <- stats::quantile(att_valid, probs = c(alpha / 2, 1 - alpha / 2))
+  se_att <- stats::sd(att_valid, na.rm = TRUE)
+  ci_att <- stats::quantile(att_valid, probs = c(alpha / 2, 1 - alpha / 2), na.rm = TRUE)
 
-  qte_se <- apply(qte_valid, 2, stats::sd)
-  qte_ci_lo <- apply(qte_valid, 2, stats::quantile, probs = alpha / 2)
-  qte_ci_hi <- apply(qte_valid, 2, stats::quantile, probs = 1 - alpha / 2)
+  qte_se <- apply(qte_valid, 2, stats::sd, na.rm = TRUE)
+  qte_ci_lo <- apply(qte_valid, 2, stats::quantile, probs = alpha / 2, na.rm = TRUE)
+  qte_ci_hi <- apply(qte_valid, 2, stats::quantile, probs = 1 - alpha / 2, na.rm = TRUE)
 
   # Point estimates from original data
   fit_orig <- fit_engression_cs(
