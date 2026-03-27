@@ -1,0 +1,26 @@
+Package: endid
+Title: Engression-Based Distributional Difference-in-Differences
+Version: 0.1.0
+Authors@R: person("Xiang", "Ao", role = c("aut", "cre"), email = "xiangao@example.com")
+Description: Combines Lee & Wooldridge (2025) panel DiD transformations with
+    engression distributional regression to produce quantile treatment effects
+    (QTE), conditional average treatment effects (CATE), and counterfactual
+    distributions. Implements unit-specific residualization and uses engression
+    for nonlinear distributional estimation. Supports both common-timing and
+    staggered adoption designs with bootstrap inference.
+License: MIT + file LICENSE
+URL: https://github.com/xiangao/endid
+BugReports: https://github.com/xiangao/endid/issues
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Imports:
+    engression,
+    stats
+Suggests:
+    ggplot2,
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
+Config/testthat/edition: 3
+VignetteBuilder: knitr
