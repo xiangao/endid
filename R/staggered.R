@@ -154,18 +154,18 @@ endid_staggered <- function(data, y, ivar, tvar, gvar,
       cohort = g,
       n_treated = length(treated_units),
       n_control = length(control_units),
-      att = fit_g$att,
+      att = boot_g$att_mean,
       se = boot_g$se,
       ci_lower = boot_g$ci_lower,
       ci_upper = boot_g$ci_upper,
       att_boot = boot_g$att_boot,
-      qte = boot_g$qte_boot,
+      qte = .combine_qte_results(fit_g, boot_g, quantiles),
       qte_boot_mat = boot_g$qte_boot_mat
     )
 
     if (!silent) {
       message(sprintf("Cohort %s: ATT = %.4f (SE = %.4f), n_treated = %d, n_control = %d",
-                       g, fit_g$att, boot_g$se, length(treated_units), length(control_units)))
+                       g, boot_g$att_mean, boot_g$se, length(treated_units), length(control_units)))
     }
   }
 
@@ -227,20 +227,17 @@ aggregate_cohorts <- function(cohort_results, quantiles, nboot) {
     }
   }
 
-  se_overall <- stats::sd(att_boot_overall)
-  ci_overall <- stats::quantile(att_boot_overall, probs = c(0.025, 0.975))
+  se_overall <- stats::sd(att_boot_overall, na.rm = TRUE)
+  ci_overall <- stats::quantile(att_boot_overall, probs = c(0.025, 0.975), na.rm = TRUE)
 
-  # QTE aggregation
-  qte_effects <- vapply(cohort_results, function(x) x$qte$effect, numeric(length(quantiles)))
-  if (is.matrix(qte_effects)) {
-    qte_agg <- as.numeric(qte_effects %*% weights)
-  } else {
-    qte_agg <- qte_effects * weights
-  }
+  # Use the mean of the pooled bootstrap distribution as the point estimate
+  # for the aggregate QTE, which is more stable than the weighted average of
+  # individual (stochastic) fits.
+  qte_agg <- colMeans(qte_boot_overall, na.rm = TRUE)
 
-  qte_se <- apply(qte_boot_overall, 2, stats::sd)
-  qte_ci_lo <- apply(qte_boot_overall, 2, stats::quantile, probs = 0.025)
-  qte_ci_hi <- apply(qte_boot_overall, 2, stats::quantile, probs = 0.975)
+  qte_se <- apply(qte_boot_overall, 2, stats::sd, na.rm = TRUE)
+  qte_ci_lo <- apply(qte_boot_overall, 2, stats::quantile, probs = 0.025, na.rm = TRUE)
+  qte_ci_hi <- apply(qte_boot_overall, 2, stats::quantile, probs = 0.975, na.rm = TRUE)
 
   qte_df <- data.frame(
     quantile = quantiles,

@@ -11,8 +11,8 @@
 #' @param nsample Monte Carlo samples for engression predict (default: 500).
 #' @param alpha Significance level for CIs (default: 0.05).
 #' @param noise_dim,hidden_dim,num_layer,num_epochs,lr,silent Engression parameters.
-#' @return List with: se, ci_lower, ci_upper, att_boot (vector of B ATTs),
-#'   qte_boot (data.frame with quantile, effect, se, ci_lower, ci_upper).
+#' @return List with: se, ci_lower, ci_upper, att_boot, att_mean,
+#'   qte_se, qte_ci_lo, qte_ci_hi, qte_mean, qte_boot_mat.
 #' @keywords internal
 bootstrap_endid <- function(Y, D, controls = NULL,
                             nboot = 200,
@@ -65,30 +65,29 @@ bootstrap_endid <- function(Y, D, controls = NULL,
   qte_ci_lo <- apply(qte_valid, 2, stats::quantile, probs = alpha / 2, na.rm = TRUE)
   qte_ci_hi <- apply(qte_valid, 2, stats::quantile, probs = 1 - alpha / 2, na.rm = TRUE)
 
-  # Point estimates from original data
-  fit_orig <- fit_engression_cs(
-    Y = Y, D = D, controls = controls,
-    quantiles = quantiles, nsample = nsample,
-    noise_dim = noise_dim, hidden_dim = hidden_dim,
-    num_layer = num_layer, num_epochs = num_epochs,
-    lr = lr, silent = silent
-  )
-
-  qte_boot <- data.frame(
-    quantile = quantiles,
-    effect = fit_orig$qte$effect,
-    se = qte_se,
-    ci_lower = qte_ci_lo,
-    ci_upper = qte_ci_hi
-  )
-  rownames(qte_boot) <- NULL
-
   list(
     se = se_att,
     ci_lower = unname(ci_att[1]),
     ci_upper = unname(ci_att[2]),
     att_boot = att_valid,
-    qte_boot = qte_boot,
+    att_mean = mean(att_valid, na.rm = TRUE),
+    qte_se = qte_se,
+    qte_ci_lo = qte_ci_lo,
+    qte_ci_hi = qte_ci_hi,
+    qte_mean = colMeans(qte_valid, na.rm = TRUE),
     qte_boot_mat = qte_valid
+  )
+}
+
+# Helper to combine point estimate and bootstrap stats into qte data.frame
+# Uses bootstrap mean as stable point estimate for stochastic NN estimators
+.combine_qte_results <- function(fit, boot, quantiles) {
+  data.frame(
+    quantile = quantiles,
+    effect = boot$qte_mean,
+    se = boot$qte_se,
+    ci_lower = boot$qte_ci_lo,
+    ci_upper = boot$qte_ci_hi,
+    row.names = NULL
   )
 }

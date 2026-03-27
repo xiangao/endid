@@ -157,13 +157,13 @@ endid <- function(data, y, ivar, tvar,
     list(
       design = "common_timing",
       att_overall = list(
-        att = fit$att,
+        att = boot$att_mean,
         se = boot$se,
         ci_lower = boot$ci_lower,
         ci_upper = boot$ci_upper,
         nboot = nboot
       ),
-      qte = boot$qte_boot,
+      qte = .combine_qte_results(fit, boot, quantiles),
       engression_model = fit$model,
       cross_section = {
         base_cs <- data.frame(unit = cs[[ivar]], D = D_cs, ydot_postavg = Y_cs)
