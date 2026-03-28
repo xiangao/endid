@@ -24,7 +24,7 @@ bootstrap_endid <- function(Y, D, controls = NULL,
                             lr = 1e-3, silent = TRUE) {
 
   n <- length(Y)
-  att_boot <- numeric(nboot)
+  att_boot <- rep(NA_real_, nboot)
   qte_boot_mat <- matrix(NA_real_, nrow = nboot, ncol = length(quantiles))
 
   for (b in seq_len(nboot)) {

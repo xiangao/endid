@@ -14,47 +14,40 @@ knitr::opts_chunk$set(
 )
 ```
 
-In this vignette, we compare `lwdidR` and `endid` using the "Castle Doctrine" dataset from Cheng and Hoekstra (2013). We focus on the cohort of states that implemented the law in 2005.
+In this vignette, we compare `lwdidR` and `endid` using the "Castle Doctrine" dataset from Cheng and Hoekstra (2013). States adopted castle doctrine laws in different years (2005--2009), making this a staggered adoption design.
 
 ## Data Preparation
 
-We load the data from `lwdidR` and subset it to compare the 2005 treated cohort against states that were never treated during the sample period.
+We load the data and set up the treatment timing variable (`gvar`). States that never adopted the law during the sample period serve as controls.
 
 ```{r setup}
 library(lwdidR)
 library(endid)
 library(ggplot2)
+set.seed(42)
 
 # Load the Castle Doctrine dataset
 castle <- read.csv(system.file("extdata", "castle.csv", package = "lwdidR"))
 
-# Define treated (2005 cohort) and never-treated units
-treated_2005 <- castle$effyear == 2005 & !is.na(castle$effyear)
-never_treated <- is.na(castle$effyear) | castle$effyear == 0
+# Create gvar: first treatment year (NA for never-treated)
+castle$gvar <- castle$effyear
+castle$gvar[is.na(castle$gvar) | castle$gvar == 0] <- NA
 
-df_sub <- castle[treated_2005 | never_treated, ]
-df_sub$group <- as.integer(df_sub$effyear == 2005 & !is.na(df_sub$effyear))
-df_sub$post_2005 <- as.integer(df_sub$year >= 2005)
-
-# Use a specific indicator for lwdidR to identify treatment receipt
-df_sub$treat_receipt <- df_sub$post_2005 * df_sub$group
-
-# Time-invariant controls
-controls <- c("poverty", "unemployrt", "blackm_15_24", "whitem_15_24")
+cat("States by cohort:\n")
+print(table(castle$gvar[!duplicated(castle$sid)], useNA = "ifany"))
 ```
 
 ## Linear Estimation with lwdidR
 
-`lwdidR` provides a robust, linear estimate of the Average Treatment Effect on the Treated (ATT).
+`lwdidR` provides a robust, linear estimate of the Average Treatment Effect on the Treated (ATT) using the staggered design.
 
 ```{r lwdid}
 fit_lwdid <- lwdid(
-  data = df_sub, 
-  y = "lhomicide", 
-  ivar = "sid", 
-  tvar = "year", 
-  post = "treat_receipt", 
-  controls = controls, 
+  data = castle,
+  y = "lhomicide",
+  ivar = "sid",
+  tvar = "year",
+  gvar = "gvar",
   vce = "hc3"
 )
 summary(fit_lwdid)
@@ -62,20 +55,19 @@ summary(fit_lwdid)
 
 ## Distributional Estimation with endid
 
-`endid` uses engression to estimate how the law affects different parts of the homicide rate distribution.
+`endid` uses engression to estimate how the law affects different parts of the homicide rate distribution, aggregating across all treatment cohorts.
 
 ```{r endid, results='hide'}
 # Reduced epochs and bootstrap for faster rendering
 fit_endid <- endid(
-  data = df_sub, 
-  y = "lhomicide", 
-  ivar = "sid", 
-  tvar = "year", 
-  post = "post_2005", 
-  dvar = "group",
-  controls = controls, 
-  num_epochs = 500, 
-  nboot = 10, 
+  data = castle,
+  y = "lhomicide",
+  ivar = "sid",
+  tvar = "year",
+  gvar = "gvar",
+  rolling = "demean",
+  num_epochs = 500,
+  nboot = 20,
   silent = TRUE
 )
 ```
@@ -94,4 +86,4 @@ plot(fit_endid)
 
 ### Interpretation
 
-In this example, `lwdidR` shows a positive average effect on homicide rates. The `endid` results complement this by showing that the effect is often more pronounced in certain quantiles of the distribution. This distributional perspective can be crucial for policy analysis where the impact on the "tails" of the distribution is as important as the average impact.
+In this example, `lwdidR` shows the average effect of castle doctrine laws on log homicide rates. The `endid` results complement this by showing how the effect varies across quantiles of the distribution. This distributional perspective can be crucial for policy analysis where the impact on the "tails" of the distribution is as important as the average impact.
