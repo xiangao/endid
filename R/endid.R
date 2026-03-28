@@ -33,6 +33,8 @@
 #' @param num_epochs Engression training epochs (default: 1000).
 #' @param lr Engression learning rate (default: 1e-3).
 #' @param silent Logical. Suppress engression training output (default: TRUE).
+#' @param ncores Integer or NULL. Number of cores for parallel bootstrap.
+#'   NULL (default) uses all available cores minus one. Set to 1 to disable.
 #'
 #' @return An object of class `"endid"`.
 #'
@@ -59,7 +61,8 @@ endid <- function(data, y, ivar, tvar,
                   nboot = 200,
                   noise_dim = 5, hidden_dim = 100,
                   num_layer = 3, num_epochs = 1000,
-                  lr = 1e-3, silent = TRUE) {
+                  lr = 1e-3, silent = TRUE,
+                  ncores = NULL) {
 
   # Input validation
   stopifnot(is.data.frame(data))
@@ -79,7 +82,7 @@ endid <- function(data, y, ivar, tvar,
       quantiles = quantiles, nsample = nsample, nboot = nboot,
       noise_dim = noise_dim, hidden_dim = hidden_dim,
       num_layer = num_layer, num_epochs = num_epochs,
-      lr = lr, silent = silent
+      lr = lr, silent = silent, ncores = ncores
     ))
   }
 
@@ -150,7 +153,7 @@ endid <- function(data, y, ivar, tvar,
     nboot = nboot, quantiles = quantiles, nsample = nsample,
     noise_dim = noise_dim, hidden_dim = hidden_dim,
     num_layer = num_layer, num_epochs = num_epochs,
-    lr = lr, silent = TRUE
+    lr = lr, silent = TRUE, ncores = ncores
   )
 
   structure(

@@ -6,7 +6,7 @@
 #' @param data Long-format panel data frame.
 #' @param y,ivar,tvar,gvar Column names (character).
 #' @param rolling,control_group,aggregate,controls,season_var See \code{\link{endid}}.
-#' @param quantiles,nsample,nboot,noise_dim,hidden_dim,num_layer,num_epochs,lr,silent
+#' @param quantiles,nsample,nboot,noise_dim,hidden_dim,num_layer,num_epochs,lr,silent,ncores
 #'   Engression / bootstrap parameters.
 #' @return An \code{endid} object with \code{design = "staggered"}.
 #' @keywords internal
@@ -21,7 +21,8 @@ endid_staggered <- function(data, y, ivar, tvar, gvar,
                             nboot = 200,
                             noise_dim = 5, hidden_dim = 100,
                             num_layer = 3, num_epochs = 1000,
-                            lr = 1e-3, silent = TRUE) {
+                            lr = 1e-3, silent = TRUE,
+                            ncores = NULL) {
 
   if (!gvar %in% names(data)) stop(sprintf("Column '%s' not found in data.", gvar))
 
@@ -141,7 +142,7 @@ endid_staggered <- function(data, y, ivar, tvar, gvar,
         nboot = nboot, quantiles = quantiles, nsample = nsample,
         noise_dim = noise_dim, hidden_dim = hidden_dim,
         num_layer = num_layer, num_epochs = num_epochs,
-        lr = lr, silent = TRUE
+        lr = lr, silent = TRUE, ncores = ncores
       ),
       error = function(e) {
         warning(sprintf("Cohort %s: bootstrap failed (%s).", g, e$message))

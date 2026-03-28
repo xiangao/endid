@@ -27,32 +27,41 @@ Both `endid` and `lwdidR` implement the panel Difference-in-Differences (DiD) ap
 
 ## A Simulation Comparison
 
-We'll simulate a simple panel where the treatment effect is non-linear—specifically, it varies by a covariate.
+We'll simulate a panel where the treatment has a **location-scale** effect: it shifts
+both the mean and the spread of the outcome distribution. This creates quantile treatment
+effects (QTEs) that vary across the distribution — small or even negative at lower quantiles,
+and large at upper quantiles.
+
+The true QTE at quantile $\tau$ is:
+$$\text{QTE}(\tau) = \delta + (\sigma_1 - \sigma_0) \cdot \Phi^{-1}(\tau)$$
+where $\delta = 0.5$ is the location shift, $\sigma_0 = 0.5$ and $\sigma_1 = 1.5$, so
+$\text{QTE}(\tau) = 0.5 + \Phi^{-1}(\tau)$. This ranges from about $-0.78$ at $\tau = 0.1$
+to $1.78$ at $\tau = 0.9$.
 
 ```{r setup}
 library(lwdidR)
 library(endid)
 set.seed(42)
 
-# Generate synthetic panel data
-N <- 100
+# Generate synthetic panel data with location-scale treatment effect
+N <- 200
 T_total <- 6
 tpost1 <- 4
 
 unit <- rep(1:N, each = T_total)
 time <- rep(1:T_total, times = N)
-X <- rep(runif(N, -1, 1), each = T_total) # Time-invariant control
+alpha <- rep(rnorm(N, sd = 0.3), each = T_total)  # Unit fixed effects
 # Group 1: treated, Group 0: control
 group <- rep(c(1, 0), each = N/2 * T_total)
 post <- as.integer(time >= tpost1)
-# Treat units in group 1 after time tpost1
-y <- X + (0.5 + 0.5 * X) * (post * (group == 1)) + rnorm(N * T_total, sd = 0.2)
+D <- post * (group == 1)
 
-# Create the data frame
-# In lwdidR, for common-timing, 'post' should typically be the treatment-receipt indicator 
-# (1 if unit i is treated at time t)
-df <- data.frame(unit = unit, time = time, y = y, X = X, 
-                 post_treat = post * group, group = group)
+# Location-scale DGP: treatment shifts mean by 0.5 and increases SD from 0.5 to 1.5
+epsilon <- rnorm(N * T_total)
+y <- alpha + 0.5 * D + (0.5 + 1.0 * D) * epsilon
+
+df <- data.frame(unit = unit, time = time, y = y,
+                 post_treat = D, group = group)
 ```
 
 ### 1. Estimating with lwdidR (OLS)
@@ -61,8 +70,8 @@ df <- data.frame(unit = unit, time = time, y = y, X = X,
 
 ```{r lwdid}
 # Using 'post_treat' as the treatment receipt indicator
-fit_lwdid <- lwdid(df, y = "y", ivar = "unit", tvar = "time", post = "post_treat", 
-                   controls = "X", vce = "hc3")
+fit_lwdid <- lwdid(df, y = "y", ivar = "unit", tvar = "time", post = "post_treat",
+                   vce = "hc3")
 summary(fit_lwdid)
 ```
 
@@ -73,10 +82,9 @@ summary(fit_lwdid)
 ```{r endid, results='hide'}
 # We use fewer epochs and bootstrap draws for speed in this vignette
 # For endid, 'post' is a calendar indicator, 'dvar' is the group indicator
-fit_endid <- endid(df, y = "y", ivar = "unit", tvar = "time", 
+fit_endid <- endid(df, y = "y", ivar = "unit", tvar = "time",
                    post = "post_treat", dvar = "group",
-                   controls = "X",
-                   num_epochs = 200, nboot = 5, silent = TRUE)
+                   num_epochs = 500, nboot = 20, silent = TRUE)
 ```
 
 ```{r endid_summary}
@@ -85,16 +93,29 @@ summary(fit_endid)
 
 ### Visualizing Quantile Treatment Effects
 
-While `lwdidR` provides a single ATT, `endid` allows us to see how the treatment affects different parts of the distribution.
+While `lwdidR` provides a single ATT (around 0.5, the true location shift), `endid` reveals the full picture: the treatment *hurts* at low quantiles (by increasing downside risk) and *helps substantially* at high quantiles (by increasing upside). The QTE plot should show an upward-sloping curve crossing the ATT line.
 
-```{r plot_qte, fig.width=7, fig.height=4}
-# plot(fit_endid) 
-# Note: In a vignette we'd usually use ggplot2 directly or ensure it's available
+```{r plot_qte, fig.width=7, fig.height=5}
 library(ggplot2)
 plot(fit_endid)
+```
+
+### Adding the True QTE
+
+We can overlay the analytical QTE to verify that `endid` recovers the true distributional effect.
+
+```{r plot_true, fig.width=7, fig.height=5}
+# True QTE: 0.5 + qnorm(tau)
+taus <- seq(0.05, 0.95, by = 0.05)
+true_qte <- data.frame(tau = taus, qte = 0.5 + qnorm(taus))
+
+plot(fit_endid) +
+  geom_line(data = true_qte, aes(x = tau, y = qte),
+            linetype = "dashed", color = "red", linewidth = 0.8) +
+  labs(caption = "Dashed red: true QTE")
 ```
 
 ## When to use which?
 
 1.  **Use `lwdidR`** when you want a fast, industry-standard linear DiD estimate with well-understood frequentist properties and high-performance standard errors (like Wild Cluster Bootstrap).
-2.  **Use `endid`** when you suspect the treatment effect might be non-linear, vary significantly across the distribution, or if you want to estimate Quantile Treatment Effects (QTE) while still benefiting from the Lee-Wooldridge panel-to-cross-section transformation.
+2.  **Use `endid`** when you suspect the treatment effect might be non-linear, vary across the distribution, or if you want to estimate Quantile Treatment Effects (QTE). In this example, `lwdidR` correctly estimates the ATT of 0.5, but completely misses that the treatment *increases inequality* — a conclusion only visible through the distributional lens of `endid`.

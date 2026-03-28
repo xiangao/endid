@@ -21,20 +21,22 @@ bootstrap_endid <- function(Y, D, controls = NULL,
                             alpha = 0.05,
                             noise_dim = 5, hidden_dim = 100,
                             num_layer = 3, num_epochs = 1000,
-                            lr = 1e-3, silent = TRUE) {
+                            lr = 1e-3, silent = TRUE,
+                            ncores = NULL) {
 
   n <- length(Y)
-  att_boot <- rep(NA_real_, nboot)
-  qte_boot_mat <- matrix(NA_real_, nrow = nboot, ncol = length(quantiles))
+  nq <- length(quantiles)
 
-  for (b in seq_len(nboot)) {
+  # Single bootstrap replicate function
+  .one_boot <- function(b) {
     idx <- sample.int(n, n, replace = TRUE)
     Y_b <- Y[idx]
     D_b <- D[idx]
     ctrl_b <- if (!is.null(controls)) controls[idx, , drop = FALSE] else NULL
 
-    # Skip if resampled data has no treated or no control
-    if (sum(D_b == 1) < 2 || sum(D_b == 0) < 2) next
+    if (sum(D_b == 1) < 2 || sum(D_b == 0) < 2) {
+      return(list(att = NA_real_, qte = rep(NA_real_, nq)))
+    }
 
     fit_b <- tryCatch(
       fit_engression_cs(
@@ -48,10 +50,36 @@ bootstrap_endid <- function(Y, D, controls = NULL,
     )
 
     if (!is.null(fit_b)) {
-      att_boot[b] <- fit_b$att
-      qte_boot_mat[b, ] <- fit_b$qte$effect
+      list(att = fit_b$att, qte = fit_b$qte$effect)
+    } else {
+      list(att = NA_real_, qte = rep(NA_real_, nq))
     }
   }
+
+  # Determine number of cores
+  if (is.null(ncores)) ncores <- max(1L, parallel::detectCores() - 1L)
+
+  if (ncores > 1L) {
+    if (!silent) message(sprintf("Running %d bootstrap replicates on %d cores...", nboot, ncores))
+    cl <- parallel::makeCluster(ncores)
+    on.exit(parallel::stopCluster(cl), add = TRUE)
+    # Export needed objects and packages to workers
+    parallel::clusterExport(cl, c("Y", "D", "controls", "n", "nq", "quantiles",
+                                  "nsample", "noise_dim", "hidden_dim",
+                                  "num_layer", "num_epochs", "lr"),
+                            envir = environment())
+    parallel::clusterExport(cl, "fit_engression_cs",
+                            envir = asNamespace("endid"))
+    parallel::clusterEvalQ(cl, library(engression))
+    # Set different RNG seeds per worker for reproducibility
+    parallel::clusterSetRNGStream(cl, iseed = NULL)
+    boot_results <- parallel::parLapply(cl, seq_len(nboot), .one_boot)
+  } else {
+    boot_results <- lapply(seq_len(nboot), .one_boot)
+  }
+
+  att_boot <- vapply(boot_results, `[[`, numeric(1), "att")
+  qte_boot_mat <- do.call(rbind, lapply(boot_results, `[[`, "qte"))
 
   # Remove failed replicates
   valid <- !is.na(att_boot)
