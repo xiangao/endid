@@ -25,6 +25,7 @@ endid(
   num_layer = 3,
   num_epochs = 1000,
   lr = 0.001,
+  num_cores = 1,
   silent = TRUE
 )
 }
@@ -75,6 +76,8 @@ designs. Units with value 0, NA, or Inf are never-treated.}
 \item{num_epochs}{Engression training epochs (default: 1000).}
 
 \item{lr}{Engression learning rate (default: 1e-3).}
+
+\item{num_cores}{Integer. Number of cores for bootstrap parallelization (default: 1).}
 
 \item{silent}{Logical. Suppress engression training output (default: TRUE).}
 }

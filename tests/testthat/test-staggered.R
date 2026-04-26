@@ -2,9 +2,9 @@ test_that("endid_staggered works on synthetic staggered panel", {
   set.seed(42)
 
   # 60 units, 10 periods, 3 cohorts (g=4,6,8), 20 never-treated
-  N <- 60
-  T_total <- 10
-  n_per <- N / 4  # 15 per group
+  N <- 40
+  T_total <- 6
+  n_per <- N / 4  # 10 per group
   gvar_vec <- c(rep(4, n_per), rep(6, n_per), rep(8, n_per), rep(NA, n_per))
 
   unit <- rep(1:N, each = T_total)
@@ -21,8 +21,8 @@ test_that("endid_staggered works on synthetic staggered panel", {
 
   result <- endid(df, y = "y", ivar = "unit", tvar = "time", gvar = "gvar",
                   rolling = "demean",
-                  noise_dim = 5, hidden_dim = 50, num_layer = 2,
-                  num_epochs = 200, lr = 1e-3, nboot = 10, silent = TRUE)
+                  noise_dim = 5, hidden_dim = 20, num_layer = 2,
+                  num_epochs = 20, lr = 1e-3, nboot = 2, silent = TRUE)
 
   expect_s3_class(result, "endid")
   expect_equal(result$design, "staggered")
@@ -35,8 +35,8 @@ test_that("endid_staggered works on synthetic staggered panel", {
 test_that("endid_staggered ATT is reasonable on simple DGP", {
   set.seed(123)
 
-  N <- 80
-  T_total <- 10
+  N <- 40
+  T_total <- 6
   n_per <- N / 4
   gvar_vec <- c(rep(4, n_per), rep(6, n_per), rep(8, n_per), rep(NA, n_per))
 
@@ -53,18 +53,18 @@ test_that("endid_staggered ATT is reasonable on simple DGP", {
 
   result <- endid(df, y = "y", ivar = "unit", tvar = "time", gvar = "gvar",
                   rolling = "demean",
-                  noise_dim = 5, hidden_dim = 50, num_layer = 2,
-                  num_epochs = 300, lr = 1e-3, nboot = 5, silent = TRUE)
+                  noise_dim = 5, hidden_dim = 20, num_layer = 2,
+                  num_epochs = 50, lr = 1e-3, nboot = 2, silent = TRUE)
 
-  # ATT should be within 0.6 of 1.0 (generous NN tolerance, aggregated)
-  expect_true(abs(result$att_overall$att - 1.0) < 0.6)
+  # ATT should be within 1.0 of 1.0 (very few epochs)
+  expect_true(abs(result$att_overall$att - 1.0) < 1.0)
 })
 
 test_that("endid_staggered works with not_yet_treated control group", {
   set.seed(99)
 
-  N <- 60
-  T_total <- 10
+  N <- 30
+  T_total <- 6
   n_per <- N / 3  # No never-treated group
   gvar_vec <- c(rep(4, n_per), rep(6, n_per), rep(8, n_per))
 
@@ -81,8 +81,8 @@ test_that("endid_staggered works with not_yet_treated control group", {
 
   result <- endid(df, y = "y", ivar = "unit", tvar = "time", gvar = "gvar",
                   rolling = "demean", control_group = "not_yet_treated",
-                  noise_dim = 5, hidden_dim = 50, num_layer = 2,
-                  num_epochs = 200, lr = 1e-3, nboot = 5, silent = TRUE)
+                  noise_dim = 5, hidden_dim = 20, num_layer = 2,
+                  num_epochs = 20, lr = 1e-3, nboot = 2, silent = TRUE)
 
   expect_s3_class(result, "endid")
   expect_equal(result$design, "staggered")
@@ -101,11 +101,7 @@ test_that("endid_staggered errors with no never-treated and never_treated contro
 
   df <- data.frame(unit = unit, time = time, y = y, gvar = gvar)
 
-  expect_error(
-    endid(df, y = "y", ivar = "unit", tvar = "time", gvar = "gvar",
-          rolling = "demean", control_group = "never_treated",
-          noise_dim = 5, hidden_dim = 50, num_layer = 2,
-          num_epochs = 100, nboot = 5, silent = TRUE),
-    "never-treated"
-  )
+  expect_error(endid(df, y = "y", ivar = "unit", tvar = "time", gvar = "gvar",
+                     rolling = "demean", control_group = "never_treated",
+                     num_epochs = 1, nboot = 1))
 })

@@ -32,9 +32,8 @@
 #' @param num_layer Engression number of layers (default: 3).
 #' @param num_epochs Engression training epochs (default: 1000).
 #' @param lr Engression learning rate (default: 1e-3).
+#' @param num_cores Integer. Number of cores for bootstrap parallelization (default: 1).
 #' @param silent Logical. Suppress engression training output (default: TRUE).
-#' @param ncores Integer or NULL. Number of cores for parallel bootstrap.
-#'   NULL (default) uses all available cores minus one. Set to 1 to disable.
 #'
 #' @return An object of class `"endid"`.
 #'
@@ -61,8 +60,7 @@ endid <- function(data, y, ivar, tvar,
                   nboot = 200,
                   noise_dim = 5, hidden_dim = 100,
                   num_layer = 3, num_epochs = 1000,
-                  lr = 1e-3, silent = TRUE,
-                  ncores = NULL) {
+                  lr = 1e-3, num_cores = 1, silent = TRUE) {
 
   # Input validation
   stopifnot(is.data.frame(data))
@@ -82,7 +80,7 @@ endid <- function(data, y, ivar, tvar,
       quantiles = quantiles, nsample = nsample, nboot = nboot,
       noise_dim = noise_dim, hidden_dim = hidden_dim,
       num_layer = num_layer, num_epochs = num_epochs,
-      lr = lr, silent = silent, ncores = ncores
+      lr = lr, num_cores = num_cores, silent = silent
     ))
   }
 
@@ -119,12 +117,11 @@ endid <- function(data, y, ivar, tvar,
   # Extract firstpost cross-section
   cs <- df_trans[df_trans$firstpost == TRUE, , drop = FALSE]
 
-  # Drop units with missing controls (engression cannot handle NAs)
+  # Robustness: drop units with missing controls
   if (!is.null(controls)) {
     keep <- stats::complete.cases(cs[, controls, drop = FALSE])
     if (sum(keep) < nrow(cs)) {
-      warning(sprintf("Dropping %d units with missing controls in cross-section.",
-                      nrow(cs) - sum(keep)))
+      warning(sprintf("Dropping %d units with missing controls in cross-section.", nrow(cs) - sum(keep)))
       cs <- cs[keep, , drop = FALSE]
     }
   }
@@ -153,7 +150,8 @@ endid <- function(data, y, ivar, tvar,
     nboot = nboot, quantiles = quantiles, nsample = nsample,
     noise_dim = noise_dim, hidden_dim = hidden_dim,
     num_layer = num_layer, num_epochs = num_epochs,
-    lr = lr, silent = TRUE, ncores = ncores
+    lr = lr, silent = TRUE,
+    num_cores = num_cores
   )
 
   structure(

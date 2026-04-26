@@ -1,0 +1,5 @@
+.claude/
+output/
+tests/testthat/Rplots.pdf
+*.Rcheck/
+..Rcheck/

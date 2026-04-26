@@ -2,6 +2,8 @@ Package: endid
 Title: Engression-Based Distributional Difference-in-Differences
 Version: 0.1.0
 Authors@R: person("Xiang", "Ao", role = c("aut", "cre"), email = "xiangao@example.com")
+Author: Xiang Ao [aut, cre]
+Maintainer: Xiang Ao <xiangao@example.com>
 Description: Combines Lee & Wooldridge (2025) panel DiD transformations with
     engression distributional regression to produce quantile treatment effects
     (QTE), conditional average treatment effects (CATE), and counterfactual

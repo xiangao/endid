@@ -17,7 +17,8 @@ bootstrap_endid(
   num_layer = 3,
   num_epochs = 1000,
   lr = 0.001,
-  silent = TRUE
+  silent = TRUE,
+  num_cores = 1
 )
 }
 \arguments{
@@ -36,13 +37,16 @@ bootstrap_endid(
 \item{alpha}{Significance level for CIs (default: 0.05).}
 
 \item{noise_dim, hidden_dim, num_layer, num_epochs, lr, silent}{Engression parameters.}
+
+\item{num_cores}{Number of cores for parallel execution (default: 1).}
 }
 \value{
-List with: se, ci_lower, ci_upper, att_boot (vector of B ATTs),
-qte_boot (data.frame with quantile, effect, se, ci_lower, ci_upper).
+List with: se, ci_lower, ci_upper, att_boot, att_mean,
+qte_se, qte_ci_lo, qte_ci_hi, qte_mean, qte_boot_mat.
 }
 \description{
 Resamples units (with replacement) from the cross-section, refits engression,
 and computes ATT and QTE on each replicate. Returns SEs and percentile CIs.
+Supports parallel execution via mclapply on Unix-like systems.
 }
 \keyword{internal}

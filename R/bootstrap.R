@@ -2,6 +2,7 @@
 #'
 #' Resamples units (with replacement) from the cross-section, refits engression,
 #' and computes ATT and QTE on each replicate. Returns SEs and percentile CIs.
+#' Supports parallel execution via mclapply on Unix-like systems.
 #'
 #' @param Y Numeric vector of residualized outcomes.
 #' @param D Binary treatment indicator.
@@ -11,6 +12,7 @@
 #' @param nsample Monte Carlo samples for engression predict (default: 500).
 #' @param alpha Significance level for CIs (default: 0.05).
 #' @param noise_dim,hidden_dim,num_layer,num_epochs,lr,silent Engression parameters.
+#' @param num_cores Number of cores for parallel execution (default: 1).
 #' @return List with: se, ci_lower, ci_upper, att_boot, att_mean,
 #'   qte_se, qte_ci_lo, qte_ci_hi, qte_mean, qte_boot_mat.
 #' @keywords internal
@@ -22,21 +24,19 @@ bootstrap_endid <- function(Y, D, controls = NULL,
                             noise_dim = 5, hidden_dim = 100,
                             num_layer = 3, num_epochs = 1000,
                             lr = 1e-3, silent = TRUE,
-                            ncores = NULL) {
+                            num_cores = 1) {
 
   n <- length(Y)
-  nq <- length(quantiles)
 
-  # Single bootstrap replicate function
-  .one_boot <- function(b) {
+  # Define the work for a single bootstrap replicate
+  boot_fun <- function(b) {
     idx <- sample.int(n, n, replace = TRUE)
     Y_b <- Y[idx]
     D_b <- D[idx]
     ctrl_b <- if (!is.null(controls)) controls[idx, , drop = FALSE] else NULL
 
-    if (sum(D_b == 1) < 2 || sum(D_b == 0) < 2) {
-      return(list(att = NA_real_, qte = rep(NA_real_, nq)))
-    }
+    # Skip if resampled data has no treated or no control
+    if (sum(D_b == 1) < 2 || sum(D_b == 0) < 2) return(NULL)
 
     fit_b <- tryCatch(
       fit_engression_cs(
@@ -50,39 +50,27 @@ bootstrap_endid <- function(Y, D, controls = NULL,
     )
 
     if (!is.null(fit_b)) {
-      list(att = fit_b$att, qte = fit_b$qte$effect)
-    } else {
-      list(att = NA_real_, qte = rep(NA_real_, nq))
+      return(list(att = fit_b$att, qte = fit_b$qte$effect))
     }
+    return(NULL)
   }
 
-  # Determine number of cores
-  if (is.null(ncores)) ncores <- max(1L, parallel::detectCores() - 1L)
-
-  if (ncores > 1L) {
-    if (!silent) message(sprintf("Running %d bootstrap replicates on %d cores...", nboot, ncores))
-    cl <- parallel::makeCluster(ncores)
-    on.exit(parallel::stopCluster(cl), add = TRUE)
-    # Export needed objects and packages to workers
-    parallel::clusterExport(cl, c("Y", "D", "controls", "n", "nq", "quantiles",
-                                  "nsample", "noise_dim", "hidden_dim",
-                                  "num_layer", "num_epochs", "lr"),
-                            envir = environment())
-    parallel::clusterExport(cl, "fit_engression_cs",
-                            envir = asNamespace("endid"))
-    parallel::clusterEvalQ(cl, library(engression))
-    # Set different RNG seeds per worker for reproducibility
-    parallel::clusterSetRNGStream(cl, iseed = NULL)
-    boot_results <- parallel::parLapply(cl, seq_len(nboot), .one_boot)
+  # Run in parallel if num_cores > 1 and on Unix-like system
+  if (num_cores > 1 && .Platform$OS.type == "unix") {
+    results <- parallel::mclapply(seq_len(nboot), boot_fun, mc.cores = num_cores)
   } else {
-    boot_results <- lapply(seq_len(nboot), .one_boot)
+    results <- lapply(seq_len(nboot), boot_fun)
   }
 
-  att_boot <- vapply(boot_results, `[[`, numeric(1), "att")
-  qte_boot_mat <- do.call(rbind, lapply(boot_results, `[[`, "qte"))
+  # Process results
+  att_boot <- vapply(results, function(x) if (is.null(x)) NA_real_ else x$att, numeric(1))
+  qte_list <- lapply(results, function(x) if (is.null(x)) rep(NA_real_, length(quantiles)) else x$qte)
+  qte_boot_mat <- do.call(rbind, qte_list)
 
   # Remove failed replicates
   valid <- !is.na(att_boot)
+  if (sum(valid) == 0) stop("All bootstrap replicates failed.")
+
   att_valid <- att_boot[valid]
   qte_valid <- qte_boot_mat[valid, , drop = FALSE]
 

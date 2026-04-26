@@ -23,6 +23,7 @@ endid_staggered(
   num_layer = 3,
   num_epochs = 1000,
   lr = 0.001,
+  num_cores = 1,
   silent = TRUE
 )
 }
@@ -33,7 +34,7 @@ endid_staggered(
 
 \item{rolling, control_group, aggregate, controls, season_var}{See \code{\link{endid}}.}
 
-\item{quantiles, nsample, nboot, noise_dim, hidden_dim, num_layer, num_epochs, lr, silent}{Engression / bootstrap parameters.}
+\item{quantiles, nsample, nboot, noise_dim, hidden_dim, num_layer, num_epochs, lr, num_cores, silent}{Engression / bootstrap parameters.}
 }
 \value{
 An \code{endid} object with \code{design = "staggered"}.
