@@ -30,6 +30,10 @@ jobs:
           extra-packages: any::pkgdown, local::.
           needs: website
 
+      - name: Install torch runtime
+        run: torch::install_torch()
+        shell: Rscript {0}
+
       - name: Build site
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
         shell: Rscript {0}
@@ -41,4 +45,3 @@ jobs:
           clean: false
           branch: gh-pages
           folder: docs
-
