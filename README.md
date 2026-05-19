@@ -1,5 +1,7 @@
 # endid
 
+[![pkgdown](https://img.shields.io/badge/pkgdown-site-blue.svg)](https://xiangao.github.io/endid/)
+
 Engression-Based Distributional Difference-in-Differences
 
 Implements the method from Lee & Wooldridge (2025), combining panel DiD transformations with [engression](https://github.com/xingyu-zhou/engression) distributional regression to estimate:
@@ -79,6 +81,17 @@ Key arguments to `endid()`:
 - `aggregate` — For staggered: `"overall"`, `"cohort"`, or `"none"`
 - `nboot` — Number of bootstrap replications (default: 200)
 - `quantiles` — Quantiles for QTE (default: `seq(0.1, 0.9, 0.1)`)
+
+## Documentation & vignettes
+
+Full documentation: **<https://xiangao.github.io/endid/>**
+
+| Page | Description |
+|------|-------------|
+| [Comparison with linear DiD](https://xiangao.github.io/endid/articles/comparison.html) | Synthetic comparison of distributional and linear DiD targets |
+| [Castle Doctrine example](https://xiangao.github.io/endid/articles/real_data_example.html) | Replication-style workflow using staggered treatment timing |
+| [`endid()`](https://xiangao.github.io/endid/reference/endid.html) | Main estimator |
+| [Reference index](https://xiangao.github.io/endid/reference/index.html) | All documented functions on one page |
 
 ## References
 

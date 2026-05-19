@@ -11,7 +11,7 @@ Description: Combines Lee & Wooldridge (2025) panel DiD transformations with
     for nonlinear distributional estimation. Supports both common-timing and
     staggered adoption designs with bootstrap inference.
 License: MIT + file LICENSE
-URL: https://github.com/xiangao/endid
+URL: https://xiangao.github.io/endid/, https://github.com/xiangao/endid
 BugReports: https://github.com/xiangao/endid/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
