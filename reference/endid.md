@@ -145,6 +145,24 @@ An object of class `"endid"`.
   castle$gvar[is.na(castle$gvar) | castle$gvar == 0] <- NA
   res <- endid(castle, "lhomicide", "sid", "year", gvar = "gvar",
                rolling = "demean", num_epochs = 500, nboot = 50)
+#> Warning: Cohort 2005: skipping (n_treated=1, n_control=29).
+#> Warning: Cohort 2009: skipping (n_treated=1, n_control=29).
   print(res)
+#> Engression-Based Distributional DiD
+#>   Design: staggered
+#>   Transformation: demean
+#> 
+#>   ATT = 0.0641  (SE = 0.0391)
+#>   95% CI: [-0.0248, 0.1134]
+#>   Bootstrap replications: 50
+#> 
+#>   Cohorts estimated: 3
+#>   Control group: never_treated
+#>   Aggregation: overall
+#> 
+#>   Cohort-level ATT:
+#>     g=2006: ATT=0.0334 (SE=0.0688), n_treated=13, n_control=29
+#>     g=2007: ATT=0.1166 (SE=0.0828), n_treated=4, n_control=29
+#>     g=2008: ATT=0.1585 (SE=0.0449), n_treated=2, n_control=29
 # }
 ```

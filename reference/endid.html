@@ -22,6 +22,7 @@ distributions."></head><body>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/xiangao/endid/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
@@ -179,15 +180,34 @@ designs. Units with value 0, NA, or Inf are never-treated.</p></dd>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># \donttest{</span></span>
-<span>  <span class="va">castle</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"castle.csv"</span>, package <span class="op">=</span> <span class="st">"endid"</span><span class="op">)</span><span class="op">)</span></span>
-<span>  <span class="va">castle</span><span class="op">$</span><span class="va">gvar</span> <span class="op">&lt;-</span> <span class="va">castle</span><span class="op">$</span><span class="va">effyear</span></span>
-<span>  <span class="va">castle</span><span class="op">$</span><span class="va">gvar</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">castle</span><span class="op">$</span><span class="va">gvar</span><span class="op">)</span> <span class="op">|</span> <span class="va">castle</span><span class="op">$</span><span class="va">gvar</span> <span class="op">==</span> <span class="fl">0</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span>
-<span>  <span class="va">res</span> <span class="op">&lt;-</span> <span class="fu">endid</span><span class="op">(</span><span class="va">castle</span>, <span class="st">"lhomicide"</span>, <span class="st">"sid"</span>, <span class="st">"year"</span>, gvar <span class="op">=</span> <span class="st">"gvar"</span>,</span>
-<span>               rolling <span class="op">=</span> <span class="st">"demean"</span>, num_epochs <span class="op">=</span> <span class="fl">500</span>, nboot <span class="op">=</span> <span class="fl">50</span><span class="op">)</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">res</span><span class="op">)</span></span>
-<span><span class="co"># }</span></span>
-<span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span>  <span class="va">castle</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"castle.csv"</span>, package <span class="op">=</span> <span class="st">"endid"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="va">castle</span><span class="op">$</span><span class="va">gvar</span> <span class="op">&lt;-</span> <span class="va">castle</span><span class="op">$</span><span class="va">effyear</span></span></span>
+<span class="r-in"><span>  <span class="va">castle</span><span class="op">$</span><span class="va">gvar</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">castle</span><span class="op">$</span><span class="va">gvar</span><span class="op">)</span> <span class="op">|</span> <span class="va">castle</span><span class="op">$</span><span class="va">gvar</span> <span class="op">==</span> <span class="fl">0</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span></span>
+<span class="r-in"><span>  <span class="va">res</span> <span class="op">&lt;-</span> <span class="fu">endid</span><span class="op">(</span><span class="va">castle</span>, <span class="st">"lhomicide"</span>, <span class="st">"sid"</span>, <span class="st">"year"</span>, gvar <span class="op">=</span> <span class="st">"gvar"</span>,</span></span>
+<span class="r-in"><span>               rolling <span class="op">=</span> <span class="st">"demean"</span>, num_epochs <span class="op">=</span> <span class="fl">500</span>, nboot <span class="op">=</span> <span class="fl">50</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Cohort 2005: skipping (n_treated=1, n_control=29).</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Cohort 2009: skipping (n_treated=1, n_control=29).</span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">res</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Engression-Based Distributional DiD</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Design: staggered</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Transformation: demean</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   ATT = 0.0641  (SE = 0.0391)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95% CI: [-0.0248, 0.1134]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Bootstrap replications: 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Cohorts estimated: 3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Control group: never_treated</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Aggregation: overall</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Cohort-level ATT:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     g=2006: ATT=0.0334 (SE=0.0688), n_treated=13, n_control=29</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     g=2007: ATT=0.1166 (SE=0.0828), n_treated=4, n_control=29</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     g=2008: ATT=0.1585 (SE=0.0449), n_treated=2, n_control=29</span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
+<span class="r-in"><span></span></span>
+</code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
