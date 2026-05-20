@@ -32,7 +32,6 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
-<li class="nav-item"><a class="nav-link" href="articles/index.html">Articles</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -50,8 +49,8 @@
 <div class="page-header"><h1 id="endid">endid<a class="anchor" aria-label="anchor" href="#endid"></a>
 </h1></div>
 <p><a href="https://xiangao.github.io/endid/"><img src="https://img.shields.io/badge/pkgdown-site-blue.svg" alt="pkgdown"></a></p>
-<p>Engression-Based Distributional Difference-in-Differences</p>
-<p>Implements the method from Lee &amp; Wooldridge (2025), combining panel DiD transformations with <a href="https://github.com/xingyu-zhou/engression" class="external-link">engression</a> distributional regression to estimate:</p>
+<p>Engression-based distributional difference-in-differences.</p>
+<p><code>endid</code> combines the panel transformations from Lee and Wooldridge (2025) with <a href="https://github.com/xingyu-zhou/engression" class="external-link">engression</a> distributional regression. The output includes:</p>
 <ul>
 <li>
 <strong>ATT</strong> — Average Treatment Effect on the Treated</li>
@@ -60,7 +59,7 @@
 <li>
 <strong>Counterfactual distributions</strong> via engression sampling</li>
 </ul>
-<p>Supports both <strong>common-timing</strong> and <strong>staggered adoption</strong> designs.</p>
+<p>Both common-timing and staggered-adoption designs are supported.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -76,7 +75,7 @@
 <h3 id="common-timing-design">Common-timing design<a class="anchor" aria-label="anchor" href="#common-timing-design"></a>
 </h3>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://xiangao.github.io/endid/">endid</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">endid</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/endid.html">endid</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">panel_df</span>,</span>

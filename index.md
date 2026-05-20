@@ -2,18 +2,17 @@
 
 [![pkgdown](https://img.shields.io/badge/pkgdown-site-blue.svg)](https://xiangao.github.io/endid/)
 
-Engression-Based Distributional Difference-in-Differences
+Engression-based distributional difference-in-differences.
 
-Implements the method from Lee & Wooldridge (2025), combining panel DiD
-transformations with
-[engression](https://github.com/xingyu-zhou/engression) distributional
-regression to estimate:
+`endid` combines the panel transformations from Lee and Wooldridge
+(2025) with [engression](https://github.com/xingyu-zhou/engression)
+distributional regression. The output includes:
 
 - **ATT** — Average Treatment Effect on the Treated
 - **QTE** — Quantile Treatment Effects across the outcome distribution
 - **Counterfactual distributions** via engression sampling
 
-Supports both **common-timing** and **staggered adoption** designs.
+Both common-timing and staggered-adoption designs are supported.
 
 ## Installation
 
