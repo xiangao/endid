@@ -14,7 +14,10 @@ knitr::opts_chunk$set(
 )
 ```
 
-Both `endid` and `lwdidR` implement the panel Difference-in-Differences (DiD) approach proposed by Lee & Wooldridge (2025). The core idea is to perform unit-specific pre-treatment transformations (like demeaning or detrending) and then collapse the panel into a cross-section for estimation.
+Both `endid` and `lwdidR` use the panel difference-in-differences idea from Lee
+and Wooldridge (2025). First transform each unit's outcome using only its
+pre-treatment observations. Then estimate the treatment effect in the resulting
+cross section.
 
 ## Key Differences
 
@@ -27,7 +30,7 @@ Both `endid` and `lwdidR` implement the panel Difference-in-Differences (DiD) ap
 
 ## A Simulation Comparison
 
-We'll simulate a panel where the treatment has a **location-scale** effect: it shifts
+We simulate a panel where the treatment has a **location-scale** effect: it shifts
 both the mean and the spread of the outcome distribution. This creates quantile treatment
 effects (QTEs) that vary across the distribution — small or even negative at lower quantiles,
 and large at upper quantiles.
@@ -66,7 +69,7 @@ df <- data.frame(unit = unit, time = time, y = y,
 
 ### 1. Estimating with lwdidR (OLS)
 
-`lwdidR` estimates the Average Treatment Effect using OLS.
+`lwdidR` estimates the average treatment effect using OLS.
 
 ```{r lwdid}
 # Using 'post_treat' as the treatment receipt indicator
@@ -77,7 +80,7 @@ summary(fit_lwdid)
 
 ### 2. Estimating with endid (Engression)
 
-`endid` uses `engression` to capture the distributional nature of the effect.
+`endid` uses `engression` to estimate the counterfactual distribution.
 
 ```{r endid, results='hide'}
 # We use fewer epochs and bootstrap draws for speed in this vignette
@@ -93,7 +96,9 @@ summary(fit_endid)
 
 ### Visualizing Quantile Treatment Effects
 
-While `lwdidR` provides a single ATT (around 0.5, the true location shift), `endid` reveals the full picture: the treatment *hurts* at low quantiles (by increasing downside risk) and *helps substantially* at high quantiles (by increasing upside). The QTE plot should show an upward-sloping curve crossing the ATT line.
+`lwdidR` gives one ATT, around the true location shift of 0.5. `endid` gives the
+QTE curve. In this DGP the treatment lowers lower quantiles and raises upper
+quantiles, so the curve should slope upward and cross the ATT line.
 
 ```{r plot_qte, fig.width=7, fig.height=5}
 library(ggplot2)
@@ -117,5 +122,6 @@ plot(fit_endid) +
 
 ## When to use which?
 
-1.  **Use `lwdidR`** when you want a fast, industry-standard linear DiD estimate with well-understood frequentist properties and high-performance standard errors (like Wild Cluster Bootstrap).
+1.  **Use `lwdidR`** when the average effect is the target and a linear DiD
+    estimate is enough.
 2.  **Use `endid`** when you suspect the treatment effect might be non-linear, vary across the distribution, or if you want to estimate Quantile Treatment Effects (QTE). In this example, `lwdidR` correctly estimates the ATT of 0.5, but completely misses that the treatment *increases inequality* — a conclusion only visible through the distributional lens of `endid`.

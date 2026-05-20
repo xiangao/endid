@@ -42,7 +42,7 @@ print(table(castle$gvar[!duplicated(castle$sid)], useNA = "ifany"))
 
 ## Linear Estimation with lwdidR
 
-`lwdidR` provides a robust, linear estimate of the Average Treatment Effect on the Treated (ATT) using the staggered design.
+`lwdidR` gives the linear ATT estimate for the staggered design.
 
 ```{r lwdid}
 fit_lwdid <- lwdid(
@@ -83,7 +83,7 @@ summary(fit_endid)
 
 ## Comparing the Results
 
-While `lwdidR` provides a single point estimate (the average effect), `endid` allows us to visualize the **Quantile Treatment Effects (QTE)**.
+`lwdidR` gives a single average effect. `endid` gives a QTE curve.
 
 ```{r plot_qte, fig.width=7, fig.height=4}
 plot(fit_endid)
@@ -91,4 +91,6 @@ plot(fit_endid)
 
 ### Interpretation
 
-In this example, `lwdidR` shows the average effect of castle doctrine laws on log homicide rates. The `endid` results complement this by showing how the effect varies across quantiles of the distribution. This distributional perspective can be crucial for policy analysis where the impact on the "tails" of the distribution is as important as the average impact.
+In this example, `lwdidR` reports the average effect of castle doctrine laws on
+log homicide rates. `endid` asks whether the effect looks different at different
+quantiles of the outcome distribution.
